@@ -47,7 +47,7 @@ async function loadFonts() {
         GlobalFonts.register(Buffer.from(response.data), fontName);
         console.log(`Loaded font: ${fontName}`);
       } catch (error) {
-        console.warn(`Failed to load font ${fontName}:`, error.message);
+        console.warn(`Failed to load font ${fontName}:`,  (error as Error).message);
       }
     });
     
@@ -55,7 +55,7 @@ async function loadFonts() {
     fontsLoaded = true;
     return true;
   } catch (error) {
-    console.error('Failed to load fonts:', error.message);
+    console.error('Failed to load fonts:',  (error as Error).message);
     // 即使字体加载失败，也继续运行
     return false;
   }
