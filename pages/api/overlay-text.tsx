@@ -271,7 +271,7 @@ export default async function handler(
 }
 
 // 工具函数 - 通过图片URL匹配角色配置
-function getCharacterConfigByImageUrl(imageUrl, characterId, configs) {
+function getCharacterConfigByImageUrl(imageUrl: string, characterId: string | string[] | undefined, configs: any): any {
   // 如果提供了characterId，优先使用
   if (characterId) {
     const config = getCharacterConfigById(characterId, configs);
@@ -282,7 +282,7 @@ function getCharacterConfigByImageUrl(imageUrl, characterId, configs) {
   const imagePath = extractImagePathFromUrl(imageUrl);
   
   // 在角色配置中查找匹配的img字段
-  const matchedConfig = configs.find(char => {
+  const matchedConfig = configs.find((char: any) => {
     // 完全匹配或路径包含关系
     return char.img === imagePath || 
            imagePath.includes(char.img) || 
@@ -299,23 +299,23 @@ function getCharacterConfigByImageUrl(imageUrl, characterId, configs) {
   return defaultConfig.defaultCharacter;
 }
 
-function getCharacterConfigById(characterId, configs) {
+function getCharacterConfigById(characterId: string | string[], configs: any): any {
   // 先按ID查找
-  let config = configs.find(char => char.id === characterId);
+  let config = configs.find((char: any) => char.id === characterId);
   if (config) return config;
 
   // 按名称查找
-  config = configs.find(char => char.name === characterId);
+  config = configs.find((char: any) => char.name === characterId);
   if (config) return config;
 
   // 按角色字段查找
-  config = configs.find(char => char.character === characterId);
+  config = configs.find((char: any) => char.character === characterId);
   if (config) return config;
 
   return null;
 }
 
-function extractImagePathFromUrl(url) {
+function extractImagePathFromUrl(url: string): string {
   try {
     const urlObj = new URL(url);
     const pathname = urlObj.pathname;
@@ -334,7 +334,7 @@ function extractImagePathFromUrl(url) {
   }
 }
 
-function processText(inputText) {
+function processText(inputText: string): string {
   // 支持多种换行符格式：\\n, \n, /+/ 
   return inputText
     .replace(/\/+/g, '\n')
@@ -342,12 +342,12 @@ function processText(inputText) {
     .replace(/\r\n/g, '\n');
 }
 
-function findLongestLine(lines) {
+function findLongestLine(lines: string[]): string {
   return lines.reduce((longest, current) => 
     current.length > longest.length ? current : longest, '');
 }
 
-function calculateOffsets(longestLine, fontSize, fontFamily, canvasWidth) {
+function calculateOffsets(longestLine: string, fontSize: number, fontFamily: string, canvasWidth: number): { x: number; y: number } {
   const tempCanvas = createCanvas(1, 1);
   const tempCtx = tempCanvas.getContext('2d');
   tempCtx.font = `${fontSize}px ${fontFamily}`;
@@ -364,7 +364,7 @@ function calculateOffsets(longestLine, fontSize, fontFamily, canvasWidth) {
   return { x: 0, y: 0 };
 }
 
-function calculateFontSize(baseSize, longestLine, canvasWidth) {
+function calculateFontSize(baseSize: number, longestLine: string, canvasWidth: number): number {
   const maxLength = 15; // 最大字符长度基准
   const minSize = 16;   // 最小字体大小
   const maxSize = 120;  // 最大字体大小
@@ -391,11 +391,11 @@ function calculateFontSize(baseSize, longestLine, canvasWidth) {
   return Math.max(minSize, Math.floor(calculatedSize));
 }
 
-function calculateInitialSpaceSize(fontSize) {
+function calculateInitialSpaceSize(fontSize: number): number {
   return fontSize + 20; // 基础行间距
 }
 
-function calculateAdaptiveSpaceSize(fontSize, lineCount) {
+function calculateAdaptiveSpaceSize(fontSize: number, lineCount: number): number {
   const baseSpace = fontSize + 10;
   // 行数越多，行间距相对越小
   if (lineCount > 3) {
