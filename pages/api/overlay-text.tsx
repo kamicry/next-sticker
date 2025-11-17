@@ -245,7 +245,7 @@ export default async function handler(
   // 将 error 断言为具有 code 属性的类型
     const err = error as any;
     // 提供更友好的错误信息
-    if (err.code === 'ENOTFOUND' || error.code === 'ECONNREFUSED') {
+    if (err.code === 'ENOTFOUND' || err.code === 'ECONNREFUSED') {
       return res.status(400).json({ 
         error: 'Cannot fetch image from the provided URL' 
       });
@@ -265,7 +265,7 @@ export default async function handler(
     
     res.status(500).json({ 
       error: 'Failed to process image',
-      details: process.env.NODE_ENV === 'development' ? error.message : undefined
+      details: process.env.NODE_ENV === 'development' ? err.message : undefined
     });
   }
 }
