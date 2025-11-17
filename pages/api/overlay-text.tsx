@@ -121,7 +121,9 @@ export default async function handler(
 
   // 验证URL格式
   try {
-    new URL(imageUrl);
+  // 确保 imageUrl 是字符串，如果是数组则取第一个元素
+  const urlToValidate = Array.isArray(imageUrl) ? imageUrl[0] : imageUrl;
+  new URL(urlToValidate);
   } catch (error) {
     return res.status(400).json({ 
       error: 'Invalid image URL format' 
@@ -138,7 +140,7 @@ export default async function handler(
     // 下载图片
     const imageResponse = await axios({
       method: 'GET',
-      url: imageUrl,
+      url: Array.isArray(imageUrl) ? imageUrl[0] : imageUrl, // 这里也要处理
       responseType: 'arraybuffer',
       timeout: 10000,
       maxContentLength: 5 * 1024 * 1024,
@@ -175,7 +177,7 @@ export default async function handler(
     let { x, y, r: rotate, s: fontSize } = defaultText;
 
     // 处理文本
-    const text = processText(inputText);
+    const text = processText(Array.isArray(inputText) ? inputText[0] : inputText);
     const lines = text.split('\n');
 
     // 文本自适应逻辑
