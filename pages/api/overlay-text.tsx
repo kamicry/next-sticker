@@ -3,11 +3,11 @@ import axios from 'axios';
 
 // 远程配置URL（可以通过环境变量配置）
 const REMOTE_CONFIG = {
-  charactersUrl: process.env.CHARACTERS_URL || 'https://raw.githubusercontent.com/lgc-NB2Dev/meme-stickers-hub/main/characters.json',
+  charactersUrl: process.env.CHARACTERS_URL || 'https://raw.githubusercontent.com/kamicry/koishi-plugin-pjsk-pptr/main/src/assets/characters.json',
   fonts: {
-    YurukaStd: process.env.FONT_YURUKA_URL || 'https://raw.githubusercontent.com/lgc-NB2Dev/meme-stickers-hub/main/fonts/YurukaStd.ttf',
-    SSFangTangTi: process.env.FONT_SSFANG_URL || 'https://raw.githubusercontent.com/lgc-NB2Dev/meme-stickers-hub/main/fonts/SSFangTangTi.ttf',
-    MicrosoftYaHei: process.env.FONT_MSYH_URL || 'https://raw.githubusercontent.com/lgc-NB2Dev/meme-stickers-hub/main/fonts/msyh.ttf'
+    YurukaStd: process.env.FONT_YURUKA_URL || 'https://raw.githubusercontent.com/kamicry/koishi-plugin-pjsk-pptr/main/src/assets/fonts/YurukaStd.woff2',
+    SSFangTangTi: process.env.FONT_SSFANG_URL || 'https://raw.githubusercontent.com/kamicry/koishi-plugin-pjsk-pptr/main/src/assets/fonts/ShangShouFangTangTi.woff2'
+   
   }
 };
 
