@@ -12,7 +12,8 @@ const REMOTE_CONFIG = {
 };
 
 // 缓存
-let characterConfigs = null;
+//let characterConfigs = null;
+let characterConfigs: any = null; 
 let fontsLoaded = false;
 
 // 加载远程角色配置
