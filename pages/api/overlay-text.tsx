@@ -229,27 +229,36 @@ export default async function handler(
     let specifiedX = x;
     let specifiedY = y;
     let specifiedFontSize = fontSize;
-    let spaceSize = calculateInitialSpaceSize(fontSize);
+    let spaceSize = calculateAdaptiveSpaceSize(fontSize, Math.max(lines.length, 1));
 
     // 检查字体是否可用
     const availableFonts = Object.keys(REMOTE_CONFIG.fonts);
     const fontString = Array.isArray(font) ? font[0] : font;
     const finalFont = availableFonts.includes(fontString) ? fontString : 'YurukaStd';
+    const fontStack = buildFontStack(finalFont);
 
     // 自适应逻辑
     const disableAdaptiveString = Array.isArray(disableAdaptiveFunctionality) ? disableAdaptiveFunctionality[0] : disableAdaptiveFunctionality;
     const shouldAdapt = !(disableAdaptiveString === 'true');
     if (shouldAdapt) {
-      const longestLine = findLongestLine(lines);
-      const offsets = calculateOffsets(longestLine, specifiedFontSize, finalFont, image.width);
+      const { fontSize: adaptedFontSize, lineSpacing } = fitFontSizeToCanvas(
+        lines,
+        specifiedFontSize,
+        image.width,
+        image.height,
+        fontStack
+      );
+      specifiedFontSize = adaptedFontSize;
+      spaceSize = lineSpacing;
+      const offsets = calculateOffsets(lines, specifiedFontSize, fontStack, image.width);
       specifiedX += offsets.x;
       specifiedY += offsets.y;
-      specifiedFontSize = calculateFontSize(specifiedFontSize, longestLine, image.width);
-      spaceSize = calculateAdaptiveSpaceSize(specifiedFontSize, lines.length);
+    } else {
+      spaceSize = calculateAdaptiveSpaceSize(specifiedFontSize, Math.max(lines.length, 1));
     }
 
     // 设置文本样式
-    context.font = `${specifiedFontSize}px ${finalFont}`;
+    context.font = createFontDeclaration(specifiedFontSize, fontStack);
     context.lineWidth = 9;
     context.strokeStyle = "white";
     context.fillStyle = color;
@@ -387,66 +396,100 @@ function processText(inputText: string): string {
     .replace(/\r\n/g, '\n');
 }
 
-function findLongestLine(lines: string[]): string {
-  return lines.reduce((longest, current) => 
-    current.length > longest.length ? current : longest, '');
+function buildFontStack(primaryFont: string): string {
+  const ordered = [primaryFont, 'SSFangTangTi', 'YurukaStd', 'sans-serif'];
+  return ordered
+    .filter((font, index) => ordered.indexOf(font) === index)
+    .map((font) => {
+      if (font === 'sans-serif' || font === 'serif' || font === 'monospace') {
+        return font;
+      }
+      return `"${font}"`;
+    })
+    .join(', ');
 }
 
-function calculateOffsets(longestLine: string, fontSize: number, fontFamily: string, canvasWidth: number): { x: number; y: number } {
+function createFontDeclaration(fontSize: number, fontStack: string): string {
+  return `${fontSize}px ${fontStack}`;
+}
+
+function calculateOffsets(lines: string[], fontSize: number, fontStack: string, canvasWidth: number): { x: number; y: number } {
+  if (!lines.length) {
+    return { x: 0, y: 0 };
+  }
+
   const tempCanvas = createCanvas(1, 1);
   const tempCtx = tempCanvas.getContext('2d');
-  tempCtx.font = `${fontSize}px ${fontFamily}`;
-  const textWidth = tempCtx.measureText(longestLine).width;
-  
-  // 如果文本宽度超过画布宽度的80%，进行偏移调整
-  if (textWidth > canvasWidth * 0.8) {
+  tempCtx.font = createFontDeclaration(fontSize, fontStack);
+  const longestWidth = Math.max(...lines.map((line) => tempCtx.measureText(line).width));
+
+  if (longestWidth > canvasWidth * 0.9) {
     return {
-      x: -textWidth * 0.1,
+      x: -longestWidth * 0.05,
       y: 0
     };
   }
-  
+
   return { x: 0, y: 0 };
 }
 
-function calculateFontSize(baseSize: number, longestLine: string, canvasWidth: number): number {
-  const maxLength = 15; // 最大字符长度基准
-  const minSize = 16;   // 最小字体大小
-  const maxSize = 120;  // 最大字体大小
-  
-  if (longestLine.length <= maxLength) {
-    return Math.min(maxSize, baseSize);
+function fitFontSizeToCanvas(
+  lines: string[],
+  baseFontSize: number,
+  canvasWidth: number,
+  canvasHeight: number,
+  fontStack: string
+): { fontSize: number; lineSpacing: number } {
+  if (!lines.length) {
+    const defaultSize = Math.max(16, Math.floor(baseFontSize));
+    return {
+      fontSize: defaultSize,
+      lineSpacing: calculateAdaptiveSpaceSize(defaultSize, 1)
+    };
   }
-  
-  // 根据长度等比缩小
-  const lengthRatio = maxLength / Math.max(longestLine.length, 1);
-  const calculatedSize = baseSize * lengthRatio;
-  
-  // 同时考虑画布宽度限制
+
+  const maxWidth = canvasWidth * 0.88;
+  const maxHeight = canvasHeight * 0.7;
+  const minFontSize = Math.max(12, Math.floor(baseFontSize * 0.4));
+  let fontSize = Math.min(baseFontSize, Math.floor(canvasWidth));
+
   const tempCanvas = createCanvas(1, 1);
   const tempCtx = tempCanvas.getContext('2d');
-  tempCtx.font = `${calculatedSize}px YurukaStd`;
-  const textWidth = tempCtx.measureText(longestLine).width;
-  
-  if (textWidth > canvasWidth * 0.8) {
-    const widthRatio = (canvasWidth * 0.8) / textWidth;
-    return Math.max(minSize, Math.floor(calculatedSize * widthRatio));
-  }
-  
-  return Math.max(minSize, Math.floor(calculatedSize));
-}
 
-function calculateInitialSpaceSize(fontSize: number): number {
-  return fontSize + 20; // 基础行间距
+  const fits = (size: number) => {
+    tempCtx.font = createFontDeclaration(size, fontStack);
+    const spacing = calculateAdaptiveSpaceSize(size, lines.length);
+    const totalHeight = size + (lines.length - 1) * spacing;
+
+    if (totalHeight > maxHeight) {
+      return false;
+    }
+
+    return lines.every((line) => tempCtx.measureText(line).width <= maxWidth);
+  };
+
+  while (fontSize > minFontSize && !fits(fontSize)) {
+    fontSize -= 1;
+  }
+
+  if (fontSize < minFontSize) {
+    fontSize = minFontSize;
+  }
+
+  return {
+    fontSize,
+    lineSpacing: calculateAdaptiveSpaceSize(fontSize, lines.length)
+  };
 }
 
 function calculateAdaptiveSpaceSize(fontSize: number, lineCount: number): number {
-  const baseSpace = fontSize + 10;
-  // 行数越多，行间距相对越小
-  if (lineCount > 3) {
-    return baseSpace * (3 / lineCount);
+  if (lineCount <= 1) {
+    return fontSize;
   }
-  return baseSpace;
+
+  const baseSpacing = fontSize * 1.2;
+  const compressionFactor = lineCount > 3 ? 3 / lineCount : 1;
+  return Math.max(fontSize * 0.8, baseSpacing * compressionFactor);
 }
 
 export const config = {
