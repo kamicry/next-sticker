@@ -1,3 +1,4 @@
+import { NextApiRequest, NextApiResponse } from 'next';
 import { createCanvas, loadImage, GlobalFonts } from '@napi-rs/canvas';
 import axios from 'axios';
 
@@ -80,7 +81,10 @@ const defaultConfig = {
   }
 };
 
-export default async function handler(req, res) {
+export default async function handler(
+  req: NextApiRequest, 
+  res: NextApiResponse<any> // 或者指定具体的响应类型
+)  {
   // 设置CORS头
   res.setHeader('Access-Control-Allow-Credentials', true);
   res.setHeader('Access-Control-Allow-Origin', '*');
