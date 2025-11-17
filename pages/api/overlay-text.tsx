@@ -240,7 +240,10 @@ export default async function handler(
 
   } catch (error) {
     console.error('Error processing image:', error);
-    
+
+    // 提供更友好的错误信息
+  // 将 error 断言为具有 code 属性的类型
+    const err = error as any;
     // 提供更友好的错误信息
     if (error.code === 'ENOTFOUND' || error.code === 'ECONNREFUSED') {
       return res.status(400).json({ 
