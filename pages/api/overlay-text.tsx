@@ -245,19 +245,19 @@ export default async function handler(
   // 将 error 断言为具有 code 属性的类型
     const err = error as any;
     // 提供更友好的错误信息
-    if (error.code === 'ENOTFOUND' || error.code === 'ECONNREFUSED') {
+    if (err.code === 'ENOTFOUND' || error.code === 'ECONNREFUSED') {
       return res.status(400).json({ 
         error: 'Cannot fetch image from the provided URL' 
       });
     }
     
-    if (error.response?.status === 404) {
+    if (err.response?.status === 404) {
       return res.status(400).json({ 
         error: 'Image not found at the provided URL' 
       });
     }
     
-    if (error.message === '无法加载角色配置') {
+    if (err.message === '无法加载角色配置') {
       return res.status(500).json({ 
         error: 'Failed to load character configurations from remote source' 
       });
