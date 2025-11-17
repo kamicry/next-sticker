@@ -1,7 +1,21 @@
 import type { NextConfig } from "next";
 
-const nextConfig: NextConfig = {
-  /* config options here */
+/** @type {import('next').NextConfig} */
+const nextConfig = {
+  reactStrictMode: true,
+  experimental: {
+    serverComponentsExternalPackages: ['canvas'],
+  },
+  images: {
+    domains: ['raw.githubusercontent.com', 'example.com'],
+  },
+  api: {
+    bodyParser: {
+      sizeLimit: '10mb',
+    },
+    responseLimit: '10mb',
+  },
 };
 
-export default nextConfig;
+module.exports = nextConfig;
+//export default nextConfig;
