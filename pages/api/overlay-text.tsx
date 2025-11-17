@@ -1,15 +1,25 @@
 import { NextApiRequest, NextApiResponse } from 'next';
 import { createCanvas, loadImage, GlobalFonts } from '@napi-rs/canvas';
 import axios from 'axios';
+import path from 'node:path';
+import { promises as fs, existsSync } from 'node:fs';
 
 // 远程配置URL（可以通过环境变量配置）
 const REMOTE_CONFIG = {
   charactersUrl: process.env.CHARACTERS_URL || 'https://raw.githubusercontent.com/kamicry/koishi-plugin-pjsk-pptr/main/src/assets/characters.json',
   fonts: {
-    YurukaStd: process.env.FONT_YURUKA_URL || 'https://raw.githubusercontent.com/kamicry/koishi-plugin-pjsk-pptr/main/src/assets/fonts/YurukaStd.woff2',
-    SSFangTangTi: process.env.FONT_SSFANG_URL || 'https://raw.githubusercontent.com/kamicry/koishi-plugin-pjsk-pptr/main/src/assets/fonts/ShangShouFangTangTi.woff2'
-   
+    YurukaStd:
+      process.env.FONT_YURUKA_URL ||
+      'https://media.githubusercontent.com/media/kamicry/koishi-plugin-pjsk-pptr/main/src/assets/fonts/YurukaStd.woff2',
+    SSFangTangTi:
+      process.env.FONT_SSFANG_URL ||
+      'https://media.githubusercontent.com/media/kamicry/koishi-plugin-pjsk-pptr/main/src/assets/fonts/ShangShouFangTangTi.woff2'
   }
+};
+
+const LOCAL_FONT_PATHS: Partial<Record<string, string>> = {
+  YurukaStd: path.join(process.cwd(), 'public', 'fonts', 'YurukaStd.woff2'),
+  SSFangTangTi: path.join(process.cwd(), 'public', 'fonts', 'ShangShouFangTangTi.woff2')
 };
 
 // 缓存
@@ -37,27 +47,62 @@ async function loadCharacterConfigs() {
 // 加载远程字体
 async function loadFonts() {
   if (fontsLoaded) return true;
-  
+
   try {
-    const fontPromises = Object.entries(REMOTE_CONFIG.fonts).map(async ([fontName, fontUrl]) => {
-      try {
-        const response = await axios.get(fontUrl, {
-          responseType: 'arraybuffer',
-          timeout: 15000
-        });
-        GlobalFonts.register(Buffer.from(response.data), fontName);
-        console.log(`Loaded font: ${fontName}`);
-      } catch (error) {
-        console.warn(`Failed to load font ${fontName}:`,  (error as Error).message);
-      }
-    });
-    
-    await Promise.allSettled(fontPromises);
-    fontsLoaded = true;
-    return true;
+    const fontEntries = Object.entries(REMOTE_CONFIG.fonts);
+
+    if (fontEntries.every(([fontName]) => GlobalFonts.has(fontName))) {
+      fontsLoaded = true;
+      return true;
+    }
+
+    const results = await Promise.all(
+      fontEntries.map(async ([fontName, fontUrl]) => {
+        if (GlobalFonts.has(fontName)) {
+          return true;
+        }
+
+        const localPath = LOCAL_FONT_PATHS[fontName];
+
+        if (localPath && existsSync(localPath)) {
+          try {
+            const fontBuffer = await fs.readFile(localPath);
+            const fontKey = GlobalFonts.register(fontBuffer, fontName);
+            if (fontKey) {
+              console.log(`Loaded font ${fontName} from local file`);
+              return true;
+            }
+            console.warn(`Registering local font ${fontName} returned null`);
+          } catch (error) {
+            console.warn(`Failed to load local font ${fontName}:`, (error as Error).message);
+          }
+        } else if (localPath) {
+          console.warn(`Local font file for ${fontName} not found at ${localPath}`);
+        }
+
+        try {
+          const response = await axios.get(fontUrl, {
+            responseType: 'arraybuffer',
+            timeout: 15000
+          });
+          const fontKey = GlobalFonts.register(Buffer.from(response.data), fontName);
+          if (fontKey) {
+            console.log(`Loaded font ${fontName} from remote source`);
+            return true;
+          }
+          console.warn(`Registering remote font ${fontName} returned null`);
+        } catch (error) {
+          console.warn(`Failed to load remote font ${fontName}:`, (error as Error).message);
+        }
+
+        return false;
+      })
+    );
+
+    fontsLoaded = fontEntries.every(([fontName]) => GlobalFonts.has(fontName));
+    return fontsLoaded || results.some(Boolean);
   } catch (error) {
-    console.error('Failed to load fonts:',  (error as Error).message);
-    // 即使字体加载失败，也继续运行
+    console.error('Failed to load fonts:', (error as Error).message);
     return false;
   }
 }
