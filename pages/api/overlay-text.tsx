@@ -28,7 +28,7 @@ async function loadCharacterConfigs() {
     console.log(`Loaded ${characterConfigs.length} character configurations`);
     return characterConfigs;
   } catch (error) {
-    console.error('Failed to load character configs:', error.message);
+    console.error('Failed to load character configs:',  (error as Error).message);
     throw new Error('无法加载角色配置');
   }
 }
