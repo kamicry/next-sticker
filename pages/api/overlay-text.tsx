@@ -188,10 +188,12 @@ export default async function handler(
 
     // 检查字体是否可用
     const availableFonts = Object.keys(REMOTE_CONFIG.fonts);
-    const finalFont = availableFonts.includes(font) ? font : 'YurukaStd';
+    const fontString = Array.isArray(font) ? font[0] : font;
+    const finalFont = availableFonts.includes(fontString) ? fontString : 'YurukaStd';
 
     // 自适应逻辑
-    const shouldAdapt = !(disableAdaptiveFunctionality === 'true');
+    const disableAdaptiveString = Array.isArray(disableAdaptiveFunctionality) ? disableAdaptiveFunctionality[0] : disableAdaptiveFunctionality;
+    const shouldAdapt = !(disableAdaptiveString === 'true');
     if (shouldAdapt) {
       const longestLine = findLongestLine(lines);
       const offsets = calculateOffsets(longestLine, specifiedFontSize, finalFont, image.width);
