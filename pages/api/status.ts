@@ -1,6 +1,7 @@
+import { NextApiRequest, NextApiResponse } from 'next';
 import { GlobalFonts } from '@napi-rs/canvas';
 
-export default function handler(req, res) {
+export default function handler(req: NextApiRequest, res: NextApiResponse) {
   const fontFamilies = GlobalFonts.families;
   
   res.status(200).json({

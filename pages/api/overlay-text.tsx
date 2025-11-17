@@ -172,7 +172,7 @@ export default async function handler(
     context.drawImage(image, 0, 0, image.width, image.height);
 
     // 获取角色配置
-    const characterConfig = getCharacterConfigByImageUrl(imageUrl, characterId, configs);
+    const characterConfig = getCharacterConfigByImageUrl(Array.isArray(imageUrl) ? imageUrl[0] : imageUrl, characterId, configs);
     const { color, defaultText } = characterConfig;
     let { x, y, r: rotate, s: fontSize } = defaultText;
 
