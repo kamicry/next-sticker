@@ -86,7 +86,7 @@ export default async function handler(
   res: NextApiResponse<any> // 或者指定具体的响应类型
 )  {
   // 设置CORS头
-  res.setHeader('Access-Control-Allow-Credentials', true);
+  res.setHeader('Access-Control-Allow-Credentials', 'true');
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET,OPTIONS');
   res.setHeader(
