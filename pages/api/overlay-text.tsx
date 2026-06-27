@@ -258,6 +258,13 @@ export default async function handler(
     const { color, strokeColor, defaultText } = characterConfig;
     let { x, y, r: rotate, s: fontSize } = defaultText;
 
+    // 按图片分辨率等比例缩放坐标和字号（角色配置以 256px 参考尺寸设计）
+    const scaleFactor = Math.min(image.width, image.height) / 256;
+    x = Math.round(x * scaleFactor - 15 * scaleFactor);
+    y = Math.round(y * scaleFactor);
+    fontSize = Math.max(12, Math.round(fontSize * scaleFactor));
+    const lineWidth = Math.max(3, Math.round(9 * scaleFactor));
+
     // 处理文本
     const text = processText(Array.isArray(inputText) ? inputText[0] : inputText);
     const lines = text.split('\n');
@@ -296,7 +303,7 @@ export default async function handler(
 
     // 设置文本样式
     context.font = createFontDeclaration(specifiedFontSize, fontStack);
-    context.lineWidth = 9;
+    context.lineWidth = lineWidth;
     context.strokeStyle = strokeColor || "white";
     context.fillStyle = color;
     context.textAlign = 'center';
