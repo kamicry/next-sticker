@@ -17,7 +17,7 @@ const nextConfig = {
   },
   
   // 启用严格模式（可选）
-  reactStrictMode: true,
+  reactStrictMode: false,
   
   // 忽略构建过程中的 TypeScript 错误（可选）
   typescript: {
