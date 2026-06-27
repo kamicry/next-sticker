@@ -25,9 +25,9 @@
     }
   ],
   "env": {
-    "CHARACTERS_URL": "https://raw.githubusercontent.com/kamicry/koishi-plugin-pjsk-pptr/main/src/assets/characters.json",
+    "CHARACTERS_URL_PJSK": "https://raw.githubusercontent.com/kamicry/arcpjsk-hub/main/pjsk/characters.json",
+    "CHARACTERS_URL_ARCAEA": "https://raw.githubusercontent.com/kamicry/arcpjsk-hub/main/arcaea/characters.json",
     "FONT_YURUKA_URL": "https://raw.githubusercontent.com/kamicry/koishi-plugin-pjsk-pptr/main/src/assets/fonts/YurukaStd.woff2",
-    "FONT_SSFANG_URL": "https://raw.githubusercontent.com/kamicry/koishi-plugin-pjsk-pptr/main/src/assets/fonts/ShangShouFangTangTi.woff2",
-   
+    "FONT_SSFANG_URL": "https://raw.githubusercontent.com/kamicry/koishi-plugin-pjsk-pptr/main/src/assets/fonts/ShangShouFangTangTi.woff2"
   }
 }

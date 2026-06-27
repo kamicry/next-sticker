@@ -5,8 +5,12 @@ import path from 'node:path';
 import { promises as fs, existsSync } from 'node:fs';
 
 // 远程配置URL（可以通过环境变量配置）
+const CHARACTERS_URLS: Record<string, string> = {
+  pjsk: process.env.CHARACTERS_URL_PJSK || process.env.CHARACTERS_URL || 'https://raw.githubusercontent.com/kamicry/arcpjsk-hub/main/pjsk/characters.json',
+  arcaea: process.env.CHARACTERS_URL_ARCAEA || process.env.CHARACTERS_URL || 'https://raw.githubusercontent.com/kamicry/arcpjsk-hub/main/arcaea/characters.json',
+};
+
 const REMOTE_CONFIG = {
-  charactersUrl: process.env.CHARACTERS_URL || 'https://raw.githubusercontent.com/kamicry/koishi-plugin-pjsk-pptr/main/src/assets/characters.json',
   fonts: {
     YurukaStd:
       process.env.FONT_YURUKA_URL ||
@@ -28,15 +32,19 @@ let characterConfigs: any = null;
 let fontsLoaded = false;
 
 // 加载远程角色配置
-async function loadCharacterConfigs() {
-  if (characterConfigs) return characterConfigs;
-  
+async function loadCharacterConfigs(type: string = 'pjsk') {
+  const configType = CHARACTERS_URLS[type] ? type : 'pjsk';
+  const url = CHARACTERS_URLS[configType];
+
+  if (characterConfigs && characterConfigs._type === configType) return characterConfigs;
+
   try {
-    const response = await axios.get(REMOTE_CONFIG.charactersUrl, {
+    const response = await axios.get(url, {
       timeout: 10000
     });
     characterConfigs = response.data;
-    console.log(`Loaded ${characterConfigs.length} character configurations`);
+    characterConfigs._type = configType;
+    console.log(`Loaded ${characterConfigs.length} character configurations for type: ${configType}`);
     return characterConfigs;
   } catch (error) {
     console.error('Failed to load character configs:',  (error as Error).message);
@@ -116,6 +124,7 @@ const defaultConfig = {
     character: "default",
     img: "default.png",
     color: "#333333",
+    strokeColor: "white",
     defaultText: {
       text: "",
       x: 0.5,
@@ -149,12 +158,15 @@ export default async function handler(
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
-  const { 
-    path: imageUrl, 
-    key: inputText, 
+  const {
+    path: imageUrl,
+    key: inputText,
     character: characterId,
     font = 'YurukaStd',
-    disableAdaptiveFunctionality = 'false'
+    disableAdaptiveFunctionality = 'false',
+    type = 'pjsk',
+    bg = '',
+    bg2 = ''
   } = req.query;
 
   // 验证参数
@@ -176,9 +188,12 @@ export default async function handler(
   }
 
   try {
+    // 解析 type 参数
+    const configType = Array.isArray(type) ? type[0] : type;
+
     // 并行加载配置和字体
     const [configs, fontsReady] = await Promise.all([
-      loadCharacterConfigs(),
+      loadCharacterConfigs(configType),
       loadFonts()
     ]);
 
@@ -213,12 +228,34 @@ export default async function handler(
     const canvas = createCanvas(image.width, image.height);
     const context = canvas.getContext('2d');
 
+    // 处理背景颜色
+    function resolveColor(c: string): string | null {
+      if (c === 'w') return '#FFFFFF';
+      if (c === 'b') return '#000000';
+      if (c === 't') return null;
+      return c.startsWith('#') ? c : `#${c}`;
+    }
+    const mainColor = Array.isArray(bg) ? bg[0] : bg;
+    const secondColor = Array.isArray(bg2) ? bg2[0] : bg2;
+    if (mainColor && secondColor && mainColor !== 't' && secondColor !== 't') {
+      // 渐变背景
+      const gradient = context.createLinearGradient(0, 0, image.width, image.height);
+      gradient.addColorStop(0, resolveColor(mainColor)!);
+      gradient.addColorStop(1, resolveColor(secondColor)!);
+      context.fillStyle = gradient;
+      context.fillRect(0, 0, image.width, image.height);
+    } else if (mainColor && mainColor !== 't') {
+      // 单色背景
+      context.fillStyle = resolveColor(mainColor)!;
+      context.fillRect(0, 0, image.width, image.height);
+    }
+
     // 绘制图片
     context.drawImage(image, 0, 0, image.width, image.height);
 
     // 获取角色配置
     const characterConfig = getCharacterConfigByImageUrl(Array.isArray(imageUrl) ? imageUrl[0] : imageUrl, characterId, configs);
-    const { color, defaultText } = characterConfig;
+    const { color, strokeColor, defaultText } = characterConfig;
     let { x, y, r: rotate, s: fontSize } = defaultText;
 
     // 处理文本
@@ -260,7 +297,7 @@ export default async function handler(
     // 设置文本样式
     context.font = createFontDeclaration(specifiedFontSize, fontStack);
     context.lineWidth = 9;
-    context.strokeStyle = "white";
+    context.strokeStyle = strokeColor || "white";
     context.fillStyle = color;
     context.textAlign = 'center';
     context.textBaseline = 'middle';
