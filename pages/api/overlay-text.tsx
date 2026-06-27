@@ -378,19 +378,33 @@ function getCharacterConfigByImageUrl(imageUrl: string, characterId: string | st
 
   // 从URL中提取图片路径
   const imagePath = extractImagePathFromUrl(imageUrl);
-  
-  // 在角色配置中查找匹配的img字段
-  const matchedConfig = configs.find((char: any) => {
-    // 完全匹配或路径包含关系
-    return char.img === imagePath || 
-           imagePath.includes(char.img) || 
-           char.img.includes(imagePath) ||
-           imageUrl.includes(char.img);
-  });
 
-  if (matchedConfig) {
-    console.log(`Matched character: ${matchedConfig.name} for image: ${imagePath}`);
-    return matchedConfig;
+  // 1. 精确匹配提取的路径（如 Tairitsu/tairitsu2.png）
+  const exactMatch = configs.find((char: any) => char.img === imagePath);
+  if (exactMatch) {
+    console.log(`Matched character (exact): ${exactMatch.name} for image: ${imagePath}`);
+    return exactMatch;
+  }
+
+  // 2. 匹配URL路径名是否以 char.img 结尾（避免包含匹配导致 tairitsu.png 误匹配 tairitsu2.png）
+  try {
+    const urlStr = Array.isArray(imageUrl) ? imageUrl[0] : imageUrl;
+    const urlObj = new URL(urlStr);
+    const pathMatch = configs.find((char: any) => urlObj.pathname.endsWith(char.img));
+    if (pathMatch) {
+      console.log(`Matched character (path): ${pathMatch.name} for image: ${imagePath}`);
+      return pathMatch;
+    }
+  } catch (e) {
+    // ignore URL parse errors
+  }
+
+  // 3. 回退：按最长的 img 路径优先做子串匹配
+  const sortedFallback = [...configs].sort((a, b) => b.img.length - a.img.length);
+  const matchByUrl = sortedFallback.find((char: any) => imageUrl.includes(char.img));
+  if (matchByUrl) {
+    console.log(`Matched character (fallback): ${matchByUrl.name} for image: ${imagePath}`);
+    return matchByUrl;
   }
 
   console.log(`No character match found for image: ${imagePath}, using default`);
