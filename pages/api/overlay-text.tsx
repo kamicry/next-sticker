@@ -233,7 +233,8 @@ export default async function handler(
       if (c === 'w') return '#FFFFFF';
       if (c === 'b') return '#000000';
       if (c === 't') return null;
-      return c.startsWith('#') ? c : `#${c}`;
+      if (c.startsWith('#') || c.startsWith('rgb')) return c;
+      return `#${c}`;
     }
     const mainColor = Array.isArray(bg) ? bg[0] : bg;
     const secondColor = Array.isArray(bg2) ? bg2[0] : bg2;
