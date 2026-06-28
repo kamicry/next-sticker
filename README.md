@@ -1,36 +1,80 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Sticker Maker — Custom Text Overlay
+
+A web app that overlays custom text on character sticker images from **Project Sekai** and **Arcaea**. Built with Next.js and server-side canvas rendering.
+
+## Features
+
+- **26 PJSK characters**, **20 Arcaea characters** with hundreds of expression variants
+- **Character grid** grouped by name with accent-color dots and variant counts
+- **Custom text** with multi-line support (`/+/` or `\n` for line breaks)
+- **Live preview** — generated sticker updates as you type
+- **Two fonts** — YurukaStd and ShangShou FangTangTi
+- **Color picker** — native color input + hex code editor + clear buttons
+- **Background** — single color, gradient (2 colors), or transparent
+- **Download PNG** — save the generated sticker
+- **Copy URL** — share the sticker link directly
+
+## Tech Stack
+
+- [Next.js](https://nextjs.org/) 16 (App Router)
+- [Tailwind CSS](https://tailwindcss.com/) v4
+- [@napi-rs/canvas](https://github.com/napi-rs/canvas) — server-side image rendering
+- [arcpjsk-hub](https://github.com/kamicry/arcpjsk-hub) — character configuration data
 
 ## Getting Started
 
-First, run the development server:
-
 ```bash
+# Install dependencies
+npm install
+
+# Start dev server
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open [http://localhost:3000](http://localhost:3000).
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## API
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+### `GET /api/overlay-text`
 
-## Learn More
+Generates a PNG with text overlaid on a character image.
 
-To learn more about Next.js, take a look at the following resources:
+| Param | Type | Description |
+|---|---|---|
+| `path` | `string` | URL of the base character image |
+| `key` | `string` | Text to overlay (`/+/` or `\n` for newline) |
+| `character` | `string` | Character ID from config |
+| `type` | `string` | `pjsk` or `arcaea` (default: `pjsk`) |
+| `font` | `string` | `YurukaStd` or `SSFangTangTi` (default: `YurukaStd`) |
+| `bg` | `string` | Background color: hex (`#ff0`), `w`/`b`/`t` (white/black/transparent) |
+| `bg2` | `string` | Second color for gradient |
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+### `GET /api/health`
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+Health check that reports character config load status.
 
-## Deploy on Vercel
+### `GET /api/status`
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+Lists registered canvas fonts.
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## Vercel Deploy
+
+A [`vercel.json`](./vercel.json) is included with:
+- 30s function timeout for the overlay API
+- CORS headers on API routes
+- Required environment variables pre-configured
+
+## Environment Variables
+
+See `.env.local` for local overrides:
+
+| Variable | Default |
+|---|---|
+| `CHARACTERS_URL_PJSK` | GitHub raw URL for PJSK characters.json |
+| `CHARACTERS_URL_ARCAEA` | GitHub raw URL for Arcaea characters.json |
+| `FONT_YURUKA_URL` | Remote URL for YurukaStd font |
+| `FONT_SSFANG_URL` | Remote URL for ShangShouFangTangTi font |
+
+## License
+
+MIT
