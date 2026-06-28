@@ -24,17 +24,20 @@ function buildApiUrl(opts: {
   font: FontType;
   bg: string;
   bg2: string;
+  absolute?: boolean;
 }): string {
-  const p = new URLSearchParams({
-    path: opts.path,
-    key: opts.key,
-    character: opts.character,
-    type: opts.type,
-    font: opts.font,
-    bg: opts.bg,
-    bg2: opts.bg2,
-  });
-  return `/api/overlay-text?${p.toString()}`;
+  const p = new URLSearchParams();
+  p.set("path", opts.path);
+  p.set("key", opts.key);
+  p.set("character", opts.character);
+  p.set("type", opts.type);
+  p.set("font", opts.font);
+  if (opts.bg) p.set("bg", opts.bg);
+  if (opts.bg2) p.set("bg2", opts.bg2);
+  const qs = p.toString();
+  return opts.absolute
+    ? `${typeof window !== "undefined" ? window.location.origin : ""}/api/overlay-text?${qs}`
+    : `/api/overlay-text?${qs}`;
 }
 
 // ── props ────────────────────────────────────────────────────────
@@ -214,6 +217,20 @@ export default function StickerMaker({ pjskCharacters, arcaeaCharacters }: Props
         })
       : null;
 
+  const copyUrl =
+    selected && text.trim()
+      ? buildApiUrl({
+          path: imageUrl,
+          key: text,
+          character: selected.id,
+          type: gameType,
+          font,
+          bg,
+          bg2,
+          absolute: true,
+        })
+      : null;
+
   const handleDownload = useCallback(async () => {
     if (!apiUrl) return;
     try {
@@ -234,16 +251,16 @@ export default function StickerMaker({ pjskCharacters, arcaeaCharacters }: Props
   }, [apiUrl, selected]);
 
   const handleCopyImage = useCallback(async () => {
-    if (!apiUrl) return;
+    if (!copyUrl) return;
     try {
-      await navigator.clipboard.writeText(apiUrl);
+      await navigator.clipboard.writeText(copyUrl);
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
     } catch {
       // fallback: select text method
       try {
         const ta = document.createElement("textarea");
-        ta.value = apiUrl;
+        ta.value = copyUrl;
         ta.style.position = "fixed";
         ta.style.opacity = "0";
         document.body.appendChild(ta);
@@ -254,7 +271,7 @@ export default function StickerMaker({ pjskCharacters, arcaeaCharacters }: Props
         setTimeout(() => setCopied(false), 2000);
       } catch {}
     }
-  }, [apiUrl]);
+  }, [copyUrl]);
 
   // ── render ──────────────────────────────────────────────────
 
